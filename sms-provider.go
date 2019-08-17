@@ -1,4 +1,4 @@
-package sms // import "github.com/AGWA/sms-over-xmpp"
+package sms // import "github.com/eric-foy/sms-over-xmpp"
 
 // SmsProvider describes a provider that is able to send and receive
 // SMS messages.

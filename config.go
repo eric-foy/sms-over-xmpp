@@ -1,4 +1,4 @@
-package sms // import "github.com/AGWA/sms-over-xmpp"
+package sms // import "github.com/eric-foy/sms-over-xmpp"
 import xco "github.com/mndrix/go-xco"
 
 // Config describes the minimum methods necessary for configuring an

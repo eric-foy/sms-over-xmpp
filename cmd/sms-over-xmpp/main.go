@@ -16,7 +16,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	sms "github.com/AGWA/sms-over-xmpp"
+	sms "github.com/eric-foy/sms-over-xmpp"
 )
 
 func main() {

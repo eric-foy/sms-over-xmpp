@@ -1,4 +1,4 @@
-package sms // import "github.com/AGWA/sms-over-xmpp"
+package sms // import "github.com/eric-foy/sms-over-xmpp"
 import (
 	"bytes"
 	"context"
@@ -35,6 +35,9 @@ type StaticConfig struct {
 	// Twilio contains optional account details for making API calls via the
 	// Twilio service.
 	Twilio *TwilioConfig `toml:"twilio"`
+
+    // Kannel contains optional settings for connecting to kannel
+    Kannel *KannelConfig `toml:"kannel"`
 }
 
 type HttpConfig struct {
@@ -58,6 +61,14 @@ type TwilioConfig struct {
 	AccountSid string `toml:"account-sid"`
 	KeySid     string `toml:"key-sid"`
 	KeySecret  string `toml:"key-secret"`
+}
+
+type KannelConfig struct {
+    SendsmsHost string `toml: "sendsms-host"`
+    SendsmsPort string `toml: "sendsms-port"`
+
+	Username string `toml:"username"`
+	Password string `toml:"password"`
 }
 
 func (self *StaticConfig) ComponentName() string {
@@ -93,6 +104,9 @@ func (self *StaticConfig) XmppPort() int {
 }
 
 func (self *StaticConfig) AddressToPhone(addr xco.Address) (string, error) {
+    // hack to test sendsms
+    return addr.LocalPart, nil
+
 	e164, ok := self.Users[addr.LocalPart+"@"+addr.DomainPart]
 	if ok {
 		return e164, nil
@@ -119,36 +133,45 @@ func (self *StaticConfig) PhoneToAddress(e164 string) (xco.Address, error) {
 }
 
 func (self *StaticConfig) SmsProvider() (SmsProvider, error) {
-	if self.Twilio == nil {
+	if self.Twilio != nil {
+        twilio := &Twilio{
+            accountSid:   self.Twilio.AccountSid,
+            keySid:       self.Twilio.KeySid,
+            keySecret:    self.Twilio.KeySecret,
+            httpHost:     self.HttpHost(),
+            httpPort:     self.HttpPort(),
+            httpUsername: self.Http.Username,
+            httpPassword: self.Http.Password,
+        }
+
+        // configure public URL for SMS status updates
+        if self.Http.PublicUrl != "" {
+            u, err := url.Parse(self.Http.PublicUrl)
+            if err != nil {
+                return nil, errors.Wrap(err, "Invalid public URL")
+            }
+            if self.Http.Username != "" {
+                if self.Http.Password == "" {
+                    u.User = url.User(self.Http.Username)
+                } else {
+                    u.User = url.UserPassword(self.Http.Username, self.Http.Password)
+                }
+            }
+            twilio.publicUrl = u
+        }
+
+        return twilio, nil
+    } else if self.Kannel != nil {
+        kannel := &Kannel{
+            SendsmsHost:    self.Kannel.SendsmsHost,
+            SendsmsPort:    self.Kannel.SendsmsPort,
+            httpUsername:   self.Kannel.Username,
+            httpPassword:   self.Kannel.Password,
+        }
+        return kannel, nil
+    } else {
 		return nil, errors.New("Need to configure an SMS provider")
-	}
-	twilio := &Twilio{
-		accountSid:   self.Twilio.AccountSid,
-		keySid:       self.Twilio.KeySid,
-		keySecret:    self.Twilio.KeySecret,
-		httpHost:     self.HttpHost(),
-		httpPort:     self.HttpPort(),
-		httpUsername: self.Http.Username,
-		httpPassword: self.Http.Password,
-	}
-
-	// configure public URL for SMS status updates
-	if self.Http.PublicUrl != "" {
-		u, err := url.Parse(self.Http.PublicUrl)
-		if err != nil {
-			return nil, errors.Wrap(err, "Invalid public URL")
-		}
-		if self.Http.Username != "" {
-			if self.Http.Password == "" {
-				u.User = url.User(self.Http.Username)
-			} else {
-				u.User = url.UserPassword(self.Http.Username, self.Http.Password)
-			}
-		}
-		twilio.publicUrl = u
-	}
-
-	return twilio, nil
+    }
 }
 
 // must be safe from multiple goroutines

@@ -1,4 +1,4 @@
-package sms // import "github.com/AGWA/sms-over-xmpp"
+package sms // import "github.com/eric-foy/sms-over-xmpp"
 
 // Sms represents a single SMS message.
 type Sms struct {

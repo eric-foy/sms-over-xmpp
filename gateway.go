@@ -1,4 +1,4 @@
-package sms // import "github.com/AGWA/sms-over-xmpp"
+package sms // import "github.com/eric-foy/sms-over-xmpp"
 import (
 	"crypto/rand"
 	"encoding/base32"
