@@ -28,7 +28,6 @@ type xmppProcess struct {
 	// channels for communicating with the XMPP server
 	xmppTx chan<- interface{}
 
-
 	// users records XMPP details about each local user.
 	//
 	// The map key is the user's bare JID.

@@ -5,14 +5,14 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
-    "github.com/rs/xid"
+	"github.com/rs/xid"
 )
 
 // Kannel represents an account with the communications provider Kannel.
 type Kannel struct {
-    // where to send outgoing HTTP requests
-    SendsmsHost string
-    SendsmsPort string
+	// where to send outgoing HTTP requests
+	SendsmsHost string
+	SendsmsPort string
 
 	// credentials for HTTP auth
 	httpUsername string
@@ -33,8 +33,8 @@ func (t *Kannel) httpClient() *http.Client {
 
 // do runs a single API request against Kannel
 func (t *Kannel) do(service string, form url.Values) (string, error) {
-    //url := "https://" + t.SendsmsHost + ":" + t.SendsmsPort + "/" + service + "?" + form.Encode()
-    url := "http://localhost:13013/cgi-bin/" + service + "?" + form.Encode()
+	//url := "https://" + t.SendsmsHost + ":" + t.SendsmsPort + "/" + service + "?" + form.Encode()
+	url := "http://localhost:13013/cgi-bin/" + service + "?" + form.Encode()
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "building HTTP request")
@@ -51,7 +51,7 @@ func (t *Kannel) do(service string, form url.Values) (string, error) {
 
 	// was the message queued for delivery?
 
-    id := xid.New()
+	id := xid.New()
 
 	return id.String(), nil
 }

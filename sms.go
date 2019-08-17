@@ -43,9 +43,10 @@ type rxSmsMessage struct {
 	// errCh is the channel for implement ErrCh() method
 	errCh chan<- error
 }
+
 func MakeRxSmsMessage(sms *Sms, errCh chan<- error) RxSms {
 	return &rxSmsMessage{
-		sms: sms,
+		sms:   sms,
 		errCh: errCh,
 	}
 }

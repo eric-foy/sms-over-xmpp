@@ -71,7 +71,7 @@ func (g *gatewayProcess) sms2xmpp(sms *Sms) error {
 		Header: xco.Header{
 			ID: NewId(),
 			From: xco.Address{
-				LocalPart: sms.From,
+				LocalPart:  sms.From,
 				DomainPart: g.config.ComponentName(),
 			},
 		},
