@@ -110,7 +110,17 @@ func (g *gatewayProcess) xmpp2sms(m *xco.Message) error {
 	var err error
 	sms := &Sms{
 		Body: m.Body,
-		To:   m.To.LocalPart,
+	}
+
+	sms.To, err = g.config.AddressToPhone(m.To)
+	switch err {
+	case nil:
+		// all is well. we'll continue below
+	case ErrIgnoreMessage:
+		log.Println("ignoring message based on jid")
+		return nil
+	default:
+		return errors.Wrap(err, "xmpp2sms")
 	}
 
 	sms.From, err = g.config.AddressToPhone(m.From)

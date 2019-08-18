@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -36,7 +37,7 @@ type StaticConfig struct {
 	// Twilio service.
 	Twilio *TwilioConfig `toml:"twilio"`
 
-	// Kannel contains optional settings for connecting to kannel
+	// Kannel contains optional settings for connecting to kannel as an sms provider.
 	Kannel *KannelConfig `toml:"kannel"`
 }
 
@@ -104,12 +105,18 @@ func (self *StaticConfig) XmppPort() int {
 }
 
 func (self *StaticConfig) AddressToPhone(addr xco.Address) (string, error) {
-	// hack to test sendsms
-	return addr.LocalPart, nil
-
 	e164, ok := self.Users[addr.LocalPart+"@"+addr.DomainPart]
 	if ok {
 		return e164, nil
+	}
+
+	// maybe the XMPP local part is a phone number
+	matched, err := regexp.MatchString(`[0-9]{9}`, addr.LocalPart)
+	if err != nil {
+		return "", err
+	}
+	if matched {
+		return addr.LocalPart, nil
 	}
 
 	return "", ErrIgnoreMessage
