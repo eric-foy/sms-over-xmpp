@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/eric-foy/go-gsm-lib"
 	xco "github.com/mndrix/go-xco"
 	"github.com/pkg/errors"
 )
@@ -37,8 +38,8 @@ type StaticConfig struct {
 	// Twilio service.
 	Twilio *TwilioConfig `toml:"twilio"`
 
-	// Kannel contains optional settings for connecting to kannel as an sms provider.
-	Kannel *KannelConfig `toml:"kannel"`
+	// AT contains optional configuration for connecting with modem via AT commands
+	AT *ATConfig `toml:"at"`
 }
 
 type HttpConfig struct {
@@ -64,12 +65,15 @@ type TwilioConfig struct {
 	KeySecret  string `toml:"key-secret"`
 }
 
-type KannelConfig struct {
-	SendsmsHost string `toml: "sendsms-host"`
-	SendsmsPort string `toml: "sendsms-port"`
+type ATConfig struct {
+	// Available options: serial_tcp, serial
+	Method string `toml:"method"`
 
-	Username string `toml:"username"`
-	Password string `toml:"password"`
+	// Such as /dev/ttyAMA0 for serial and 192.168.1.111:7777 for serial_tcp.
+	Device string `toml:"device"`
+
+	// TODO phone number could be grabbed from Users section of config.
+	PhoneNum string `toml:"my-number"`
 }
 
 func (self *StaticConfig) ComponentName() string {
@@ -168,14 +172,15 @@ func (self *StaticConfig) SmsProvider() (SmsProvider, error) {
 		}
 
 		return twilio, nil
-	} else if self.Kannel != nil {
-		kannel := &Kannel{
-			SendsmsHost:  self.Kannel.SendsmsHost,
-			SendsmsPort:  self.Kannel.SendsmsPort,
-			httpUsername: self.Kannel.Username,
-			httpPassword: self.Kannel.Password,
+	} else if self.AT != nil {
+		modem, err := gsm.New(self.AT.Method, self.AT.Device)
+		if err != nil {
+			return nil, errors.Wrap(err, "Trouble connecting with AT device")
 		}
-		return kannel, nil
+		return &AT{
+			phoneNum: self.AT.PhoneNum,
+			modem:    modem,
+		}, nil
 	} else {
 		return nil, errors.New("Need to configure an SMS provider")
 	}
