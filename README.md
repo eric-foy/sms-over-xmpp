@@ -14,8 +14,14 @@ You'll need the following available to install and run sms-over-xmpp.
 
   * [Go](https://golang.org/dl/)
   * An XMPP server (I like [Prosody](http://prosody.im/))
+
+To use Twillo as a provider:
   * A [Twilio account](https://www.twilio.com/)
   * Ability to receive incoming HTTP requests
+
+To use a GSM module as a provider:
+  * A gsm module or a phone that supports AT commands through a serial interface.
+  * An activated sim card.
 
 ## Twilio account
 
@@ -37,6 +43,40 @@ number
 [cannot send SMS](https://support.twilio.com/hc/en-us/articles/223135427-What-s-the-difference-between-a-verified-phone-number-and-a-Twilio-phone-number-).
 It must be a Twilio number.
 
+#### Receive HTTP requests
+
+If you want to receive incoming SMS, the server on which sms-over-xmpp
+runs must be able to receive incoming HTTP requests.  This is how your
+telephony provider delivers messages to sms-over-xmpp.  Ideally you
+should support TLS so that your incoming SMS are kept private in
+transit.
+
+Configuration details can vary greatly depending on your local
+circumstances.  At a minimum, you can open a high numbered port on
+your firewall so that your telephony provider can make HTTP requests
+directly to sms-over-xmpp.
+
+#### Receive incoming SMS
+
+To receive incoming SMS, you also have to associate each of your
+Twilio phone numbers with a messaging URL.  It's usually easiest to
+configure
+a
+[TwiML App](https://www.twilio.com/console/sms/dev-tools/twiml-apps/add) then
+attach it to each of your phone numbers.  The messaging URL is the
+address through which Twilio can contact sms-over-xmpp with an HTTP
+request.
+
+## AT
+Using library [go-gsm-lib](https://github.com/eric-foy/go-gsm-lib)
+
+I'm using a SIM800 module on a raspberry pi that has the gsm modem exposed on the /dev/ttyAMA0 tty.
+This connects with the help of go-gsm-lib to sms-over-xmpp which in turn is a component of a XMPP server.
+
+My XMPP server is local on the raspberry pi.
+
+(Might expand documentation if bored...)
+
 ## XMPP server
 
 sms-over-xmpp is an XMPP component as defined
@@ -55,19 +95,6 @@ component for sms-over-xmpp.  Instructions are available:
 
 You'll need to enter the component's host name and password in your
 sms-over-xmpp configuration file later.
-
-## Receive HTTP requests
-
-If you want to receive incoming SMS, the server on which sms-over-xmpp
-runs must be able to receive incoming HTTP requests.  This is how your
-telephony provider delivers messages to sms-over-xmpp.  Ideally you
-should support TLS so that your incoming SMS are kept private in
-transit.
-
-Configuration details can vary greatly depending on your local
-circumstances.  At a minimum, you can open a high numbered port on
-your firewall so that your telephony provider can make HTTP requests
-directly to sms-over-xmpp.
 
 # Installation
 
@@ -91,6 +118,14 @@ account-sid = "AC..."
 key-sid = "SK..."
 key-secret = "..."
 
+# AT (not needed if using Twillio)
+[at]
+method = "serial"
+device = "/dev/ttyAMA0"
+# Used to populate FROM in sending sms, to be compatible with Twillio struct
+# SMSC will likely ignore it
+my-number = "+11234564849" 
+
 # map XMPP usernames to E.164 phone numbers
 [users]
 "john@example.com" = "+13075551212"
@@ -99,12 +134,3 @@ key-secret = "..."
 Run your SMS component:
 
     sms-over-xmpp config.toml
-
-To receive incoming SMS, you also have to associate each of your
-Twilio phone numbers with a messaging URL.  It's usually easiest to
-configure
-a
-[TwiML App](https://www.twilio.com/console/sms/dev-tools/twiml-apps/add) then
-attach it to each of your phone numbers.  The messaging URL is the
-address through which Twilio can contact sms-over-xmpp with an HTTP
-request.
