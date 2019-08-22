@@ -38,8 +38,11 @@ type StaticConfig struct {
 	// Twilio service.
 	Twilio *TwilioConfig `toml:"twilio"`
 
-	// AT contains optional configuration for connecting with modem via AT commands
+	// AT contains optional configuration for connecting with modem via AT commands.
 	AT *ATConfig `toml:"at"`
+	// Can only connect open one connection to modem at a time, save address.
+	// Used for both sending SMS and receiving.
+	SlottedAT *AT
 }
 
 type HttpConfig struct {
@@ -173,14 +176,17 @@ func (self *StaticConfig) SmsProvider() (SmsProvider, error) {
 
 		return twilio, nil
 	} else if self.AT != nil {
-		modem, err := gsm.New(self.AT.Method, self.AT.Device)
-		if err != nil {
-			return nil, errors.Wrap(err, "Trouble connecting with AT device")
+		if self.SlottedAT == nil {
+			modem, err := gsm.New(self.AT.Method, self.AT.Device)
+			if err != nil {
+				return nil, errors.Wrap(err, "Trouble connecting with AT device")
+			}
+			self.SlottedAT = &AT{
+				phoneNum: self.AT.PhoneNum,
+				modem:    modem,
+			}
 		}
-		return &AT{
-			phoneNum: self.AT.PhoneNum,
-			modem:    modem,
-		}, nil
+		return self.SlottedAT, nil
 	} else {
 		return nil, errors.New("Need to configure an SMS provider")
 	}

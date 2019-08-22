@@ -1,8 +1,6 @@
 package sms
 
-import (
-	"github.com/eric-foy/go-gsm-lib"
-)
+import "github.com/eric-foy/go-gsm-lib"
 
 type AT struct {
 	phoneNum string
@@ -10,6 +8,8 @@ type AT struct {
 }
 
 func (at *AT) RunPstnProcess(rxSmsCh chan<- RxSms) <-chan struct{} {
+	go at.modem.ReadTTY()
+	go at.modem.InitDevice()
 	healthCh := make(chan struct{})
 	go func() {
 		defer func() { close(healthCh) }()
@@ -34,5 +34,9 @@ func (at *AT) RunPstnProcess(rxSmsCh chan<- RxSms) <-chan struct{} {
 }
 
 func (at *AT) SendSms(sms *Sms) (string, error) {
-	return at.modem.SendSMS(sms.To, sms.Body).Mr, nil
+	cmgs, err := at.modem.SendSMS(sms.To, sms.Body)
+	if err != nil {
+		return "", err
+	}
+	return cmgs.Mr, nil
 }
