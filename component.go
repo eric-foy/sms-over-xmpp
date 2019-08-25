@@ -10,21 +10,17 @@
 package sms // import "github.com/eric-foy/sms-over-xmpp"
 
 import (
-	"fmt"
 	"log"
 	"time"
 
+	gsm "github.com/eric-foy/go-gsm-lib"
 	xco "github.com/mndrix/go-xco"
 )
 
 // Component represents an SMS-over-XMPP component.
 type Component struct {
 	config *Config
-
-	// rxSmsCh is a channel connecting PSTN->Gateway.  It communicates
-	// information received about SMS (a message, a status update,
-	// etc.)
-	rxSmsCh chan *Sms
+	modem  *gsm.Modem
 
 	// rxXmppCh is a channel connecting XMPP->Gateway. It communicates
 	// incoming XMPP messages.  It doesn't carry other XMPP stanzas
@@ -41,10 +37,18 @@ type Component struct {
 // entrypoint for launching your own component if you don't want to
 // use the sms-over-xmpp command.
 func Main(config *Config) {
-	sc := &Component{config: config}
-	sc.rxSmsCh = make(chan *Sms)
-	sc.rxXmppCh = make(chan *xco.Message)
-	sc.txXmppCh = make(chan *xco.Message)
+	modem, err := gsm.New(config.AT.Method, config.AT.Device)
+	if err != nil {
+		log.Panicf("Trouble connecting with AT device:\n%s\n", err)
+	}
+	defer modem.Device.Close()
+
+	sc := &Component{
+		config:   config,
+		modem:    modem,
+		rxXmppCh: make(chan *xco.Message),
+		txXmppCh: make(chan *xco.Message),
+	}
 
 	// start processes running
 	gatewayDead := sc.runGatewayProcess()
@@ -73,7 +77,7 @@ func (sc *Component) runGatewayProcess() <-chan struct{} {
 	gateway := &gatewayProcess{
 		// as long as it's alive, Gateway owns these values
 		config: sc.config,
-		smsRx:  sc.rxSmsCh,
+		modem:  sc.modem,
 		xmppRx: sc.rxXmppCh,
 		xmppTx: sc.txXmppCh,
 	}
@@ -82,16 +86,16 @@ func (sc *Component) runGatewayProcess() <-chan struct{} {
 
 // runPstnProcess starts the PSTN process
 func (sc *Component) runPstnProcess() <-chan struct{} {
-	config := sc.config
+	healthCh := make(chan struct{})
+	go func() {
+		defer func() { close(healthCh) }()
+		sc.modem.ReadTTY()
+	}()
 
-	// choose an SMS provider
-	provider, err := config.SmsProvider()
-	if err != nil {
-		msg := fmt.Sprintf("Couldn't choose an SMS provider: %s", err)
-		panic(msg)
-	}
+	go sc.modem.WriteTTY()
+	go sc.modem.InitDevice()
 
-	return provider.RunPstnProcess(sc.rxSmsCh)
+	return healthCh
 }
 
 // runXmppProcess starts the XMPP process
