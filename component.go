@@ -21,12 +21,6 @@ import (
 type Component struct {
 	config *Config
 
-	// receiptFor contains message delivery receipts that
-	// haven't been delivered yet.  the key is a provider's outgoing
-	// SMS identifier.  the value is the delivery receipt that we should deliver
-	// once the associated SMS has been delivered.
-	receiptFor map[string]*xco.Message
-
 	// rxSmsCh is a channel connecting PSTN->Gateway.  It communicates
 	// information received about SMS (a message, a status update,
 	// etc.)
@@ -48,7 +42,6 @@ type Component struct {
 // use the sms-over-xmpp command.
 func Main(config *Config) {
 	sc := &Component{config: config}
-	sc.receiptFor = make(map[string]*xco.Message)
 	sc.rxSmsCh = make(chan *Sms)
 	sc.rxXmppCh = make(chan *xco.Message)
 	sc.txXmppCh = make(chan *xco.Message)
@@ -79,11 +72,10 @@ func Main(config *Config) {
 func (sc *Component) runGatewayProcess() <-chan struct{} {
 	gateway := &gatewayProcess{
 		// as long as it's alive, Gateway owns these values
-		config:     sc.config,
-		receiptFor: sc.receiptFor,
-		smsRx:      sc.rxSmsCh,
-		xmppRx:     sc.rxXmppCh,
-		xmppTx:     sc.txXmppCh,
+		config: sc.config,
+		smsRx:  sc.rxSmsCh,
+		xmppRx: sc.rxXmppCh,
+		xmppTx: sc.txXmppCh,
 	}
 	return gateway.run()
 }

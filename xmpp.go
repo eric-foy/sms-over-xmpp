@@ -193,7 +193,6 @@ func (x *xmppProcess) describeService() ([]xco.DiscoIdentity, []xco.DiscoFeature
 		},
 	}
 	features := []xco.DiscoFeature{
-		{Var: "urn:xmpp:receipts"},
 		{Var: "vcard-temp"},
 	}
 	return ids, features
