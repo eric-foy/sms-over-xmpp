@@ -37,9 +37,9 @@ type Component struct {
 // entrypoint for launching your own component if you don't want to
 // use the sms-over-xmpp command.
 func Main(config *Config) {
-	modem, err := gsm.New(config.AT.Method, config.AT.Device)
+	modem, err := gsm.New(config.Modem.Method, config.Modem.Device)
 	if err != nil {
-		log.Panicf("Trouble connecting with AT device:\n%s\n", err)
+		log.Panicf("Trouble connecting with modem device:\n%s\n", err)
 	}
 	defer modem.Device.Close()
 

@@ -4,7 +4,7 @@ type Config struct {
 	Xmpp ConfigXmpp `toml:"xmpp"`
 
 	// AT contains optional configuration for connecting with modem via AT commands.
-	AT *ATConfig `toml:"at"`
+	Modem *ConfigModem `toml:"at"`
 }
 
 type ConfigXmpp struct {
@@ -15,7 +15,7 @@ type ConfigXmpp struct {
 	Secret string `toml:"secret"`
 }
 
-type ATConfig struct {
+type ConfigModem struct {
 	// Available options: serial_tcp, serial
 	Method string `toml:"method"`
 
