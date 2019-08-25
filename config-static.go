@@ -3,7 +3,6 @@ import (
 	"bytes"
 	"context"
 	"log"
-	"net/url"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -34,10 +33,6 @@ type StaticConfig struct {
 	// Users maps an XMPP address to an E.164 phone number.
 	Users map[string]string `toml:"users"`
 
-	// Twilio contains optional account details for making API calls via the
-	// Twilio service.
-	Twilio *TwilioConfig `toml:"twilio"`
-
 	// AT contains optional configuration for connecting with modem via AT commands.
 	AT *ATConfig `toml:"at"`
 	// Can only connect open one connection to modem at a time, save address.
@@ -60,12 +55,6 @@ type StaticConfigXmpp struct {
 	Name   string `toml:"name"`
 	Port   int    `toml:"port"`
 	Secret string `toml:"secret"`
-}
-
-type TwilioConfig struct {
-	AccountSid string `toml:"account-sid"`
-	KeySid     string `toml:"key-sid"`
-	KeySecret  string `toml:"key-secret"`
 }
 
 type ATConfig struct {
@@ -147,49 +136,22 @@ func (self *StaticConfig) PhoneToAddress(e164 string) (xco.Address, error) {
 }
 
 func (self *StaticConfig) SmsProvider() (SmsProvider, error) {
-	if self.Twilio != nil {
-		twilio := &Twilio{
-			accountSid:   self.Twilio.AccountSid,
-			keySid:       self.Twilio.KeySid,
-			keySecret:    self.Twilio.KeySecret,
-			httpHost:     self.HttpHost(),
-			httpPort:     self.HttpPort(),
-			httpUsername: self.Http.Username,
-			httpPassword: self.Http.Password,
-		}
-
-		// configure public URL for SMS status updates
-		if self.Http.PublicUrl != "" {
-			u, err := url.Parse(self.Http.PublicUrl)
-			if err != nil {
-				return nil, errors.Wrap(err, "Invalid public URL")
-			}
-			if self.Http.Username != "" {
-				if self.Http.Password == "" {
-					u.User = url.User(self.Http.Username)
-				} else {
-					u.User = url.UserPassword(self.Http.Username, self.Http.Password)
-				}
-			}
-			twilio.publicUrl = u
-		}
-
-		return twilio, nil
-	} else if self.AT != nil {
-		if self.SlottedAT == nil {
-			modem, err := gsm.New(self.AT.Method, self.AT.Device)
-			if err != nil {
-				return nil, errors.Wrap(err, "Trouble connecting with AT device")
-			}
-			self.SlottedAT = &AT{
-				phoneNum: self.AT.PhoneNum,
-				modem:    modem,
-			}
-		}
-		return self.SlottedAT, nil
-	} else {
+	if self.AT == nil {
 		return nil, errors.New("Need to configure an SMS provider")
 	}
+
+	if self.SlottedAT == nil {
+		modem, err := gsm.New(self.AT.Method, self.AT.Device)
+		if err != nil {
+			return nil, errors.Wrap(err, "Trouble connecting with AT device")
+		}
+		self.SlottedAT = &AT{
+			phoneNum: self.AT.PhoneNum,
+			modem:    modem,
+		}
+	}
+
+	return self.SlottedAT, nil
 }
 
 // must be safe from multiple goroutines
