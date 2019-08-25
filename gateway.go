@@ -15,7 +15,7 @@ import (
 // processes, translating between their different protocols.
 type gatewayProcess struct {
 	// fields shared with Component. see docs there
-	config     Config
+	config     *Config
 	receiptFor map[string]*xco.Message
 	smsRx      <-chan RxSms
 	xmppRx     <-chan *xco.Message
@@ -63,7 +63,7 @@ func (g *gatewayProcess) loop(healthCh chan<- struct{}) {
 }
 
 func (g *gatewayProcess) sms2xmpp(sms *Sms) {
-	to, err := xco.ParseAddress(g.config.XmppJID())
+	to, err := xco.ParseAddress(g.config.Xmpp.JID)
 	if err != nil {
 		log.Printf("ERROR: parsing JID: %s", err)
 	}
@@ -78,7 +78,7 @@ func (g *gatewayProcess) sms2xmpp(sms *Sms) {
 			To: to,
 			From: xco.Address{
 				LocalPart:  sms.From,
-				DomainPart: g.config.ComponentName(),
+				DomainPart: g.config.Xmpp.Domain,
 			},
 		},
 		Type: "chat",

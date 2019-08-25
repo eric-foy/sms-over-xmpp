@@ -1,27 +1,54 @@
 package sms
 
-// Config describes the minimum methods necessary for configuring an
-// sms-over-xmpp component.  These are methods for which no sensible
-// default is possible.  Optional configuration methods are described
-// by other interfaces.
-type Config interface {
-	// ComponentName is a name (usually a domain name) by which the
-	// XMPP server knows us.
-	ComponentName() string
+import (
+	gsm "github.com/eric-foy/go-gsm-lib"
+	errors "github.com/pkg/errors"
+)
 
-	// SharedSecret is the secret with which we can authenticate to
-	// the XMPP server.
-	SharedSecret() string
+type Config struct {
+	Xmpp ConfigXmpp `toml:"xmpp"`
 
-	// SmsProvider returns a provider that's able to send and receive
-	// SMS messages.
-	SmsProvider() (SmsProvider, error)
+	// AT contains optional configuration for connecting with modem via AT commands.
+	AT *ATConfig `toml:"at"`
+	// Can only connect open one connection to modem at a time, save address.
+	// Used for both sending SMS and receiving.
+	SlottedAT *AT
+}
 
-	// XmppHost is the domain name or IP address of the XMPP server.
-	XmppHost() string
+type ConfigXmpp struct {
+	Host   string `toml:"host"`
+	Domain string `toml:"domain"`
+	JID    string `toml:"jid"`
+	Port   int    `toml:"port"`
+	Secret string `toml:"secret"`
+}
 
-	// XmppPort is the port on which the XMPP server is listening.
-	XmppPort() int
+type ATConfig struct {
+	// Available options: serial_tcp, serial
+	Method string `toml:"method"`
 
-	XmppJID() string
+	// Such as /dev/ttyAMA0 for serial and 192.168.1.111:7777 for serial_tcp.
+	Device string `toml:"device"`
+
+	// TODO phone number could be grabbed from Users section of config.
+	PhoneNum string `toml:"my-number"`
+}
+
+func (self *Config) SmsProvider() (SmsProvider, error) {
+	if self.AT == nil {
+		return nil, errors.New("Need to configure an SMS provider")
+	}
+
+	if self.SlottedAT == nil {
+		modem, err := gsm.New(self.AT.Method, self.AT.Device)
+		if err != nil {
+			return nil, errors.Wrap(err, "Trouble connecting with AT device")
+		}
+		self.SlottedAT = &AT{
+			phoneNum: self.AT.PhoneNum,
+			modem:    modem,
+		}
+	}
+
+	return self.SlottedAT, nil
 }

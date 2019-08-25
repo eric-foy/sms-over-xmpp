@@ -19,7 +19,7 @@ import (
 
 // Component represents an SMS-over-XMPP component.
 type Component struct {
-	config Config
+	config *Config
 
 	// receiptFor contains message delivery receipts that
 	// haven't been delivered yet.  the key is a provider's outgoing
@@ -46,7 +46,7 @@ type Component struct {
 // Main runs a component using the given configuration.  It's the main
 // entrypoint for launching your own component if you don't want to
 // use the sms-over-xmpp command.
-func Main(config Config) {
+func Main(config *Config) {
 	sc := &Component{config: config}
 	sc.receiptFor = make(map[string]*xco.Message)
 	sc.rxSmsCh = make(chan RxSms)
@@ -105,10 +105,10 @@ func (sc *Component) runPstnProcess() <-chan struct{} {
 // runXmppProcess starts the XMPP process
 func (sc *Component) runXmppProcess() <-chan struct{} {
 	x := &xmppProcess{
-		host:   sc.config.XmppHost(),
-		port:   sc.config.XmppPort(),
-		name:   sc.config.ComponentName(),
-		secret: sc.config.SharedSecret(),
+		host:   sc.config.Xmpp.Host,
+		port:   sc.config.Xmpp.Port,
+		name:   sc.config.Xmpp.Domain,
+		secret: sc.config.Xmpp.Secret,
 
 		gatewayTx: sc.txXmppCh,
 		gatewayRx: sc.rxXmppCh,

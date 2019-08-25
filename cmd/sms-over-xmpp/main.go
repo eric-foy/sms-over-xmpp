@@ -25,8 +25,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	config := new(sms.StaticConfig)
-	_, err := toml.DecodeFile(os.Args[1], &config)
+	config := new(sms.Config)
+	_, err := toml.DecodeFile(os.Args[1], config)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "can't read config file '%s': %s\n", os.Args[1], err)
 		os.Exit(1)
