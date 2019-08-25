@@ -15,12 +15,7 @@ import (
 	"time"
 
 	xco "github.com/mndrix/go-xco"
-	errors "github.com/pkg/errors"
 )
-
-// ErrIgnoreMessage should be returned to indicate that a message
-// should be ignored; as if it never happened.
-var ErrIgnoreMessage = errors.New("ignore this message")
 
 // Component represents an SMS-over-XMPP component.
 type Component struct {

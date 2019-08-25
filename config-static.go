@@ -1,10 +1,7 @@
 package sms
 
 import (
-	"regexp"
-
 	gsm "github.com/eric-foy/go-gsm-lib"
-	xco "github.com/mndrix/go-xco"
 	errors "github.com/pkg/errors"
 )
 
@@ -31,6 +28,7 @@ type StaticConfig struct {
 type StaticConfigXmpp struct {
 	Host   string `toml:"host"`
 	Name   string `toml:"name"`
+	JID    string `toml:"jid"`
 	Port   int    `toml:"port"`
 	Secret string `toml:"secret"`
 }
@@ -62,39 +60,8 @@ func (self *StaticConfig) XmppPort() int {
 	return self.Xmpp.Port
 }
 
-func (self *StaticConfig) AddressToPhone(addr xco.Address) (string, error) {
-	e164, ok := self.Users[addr.LocalPart+"@"+addr.DomainPart]
-	if ok {
-		return e164, nil
-	}
-
-	// maybe the XMPP local part is a phone number
-	matched, err := regexp.MatchString(`[0-9]{9}`, addr.LocalPart)
-	if err != nil {
-		return "", err
-	}
-	if matched {
-		return addr.LocalPart, nil
-	}
-
-	return "", ErrIgnoreMessage
-}
-
-func (self *StaticConfig) PhoneToAddress(e164 string) (xco.Address, error) {
-	// is there an explicit mapping?
-	jid, ok := self.Phones[e164]
-	if ok {
-		return xco.ParseAddress(jid)
-	}
-
-	// maybe there's an implicit mapping
-	for jid, phone := range self.Users {
-		if phone == e164 {
-			return xco.ParseAddress(jid)
-		}
-	}
-
-	return xco.Address{}, ErrIgnoreMessage
+func (self *StaticConfig) XmppJID() string {
+	return self.Xmpp.JID
 }
 
 func (self *StaticConfig) SmsProvider() (SmsProvider, error) {

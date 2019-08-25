@@ -39,7 +39,7 @@ func (g *gatewayProcess) loop(healthCh chan<- struct{}) {
 
 			switch x := rxSms.(type) {
 			case *rxSmsMessage:
-				err = g.sms2xmpp(x.sms)
+				g.sms2xmpp(x.sms)
 			case *rxSmsStatus:
 				switch x.status {
 				case smsDelivered:
@@ -62,8 +62,12 @@ func (g *gatewayProcess) loop(healthCh chan<- struct{}) {
 	}
 }
 
-func (g *gatewayProcess) sms2xmpp(sms *Sms) error {
-	var err error
+func (g *gatewayProcess) sms2xmpp(sms *Sms) {
+	to, err := xco.ParseAddress(g.config.XmppJID())
+	if err != nil {
+		log.Printf("ERROR: parsing JID: %s", err)
+	}
+
 	msg := &xco.Message{
 		XMLName: xml.Name{
 			Local: "message",
@@ -71,6 +75,7 @@ func (g *gatewayProcess) sms2xmpp(sms *Sms) error {
 		},
 		Header: xco.Header{
 			ID: NewId(),
+			To: to,
 			From: xco.Address{
 				LocalPart:  sms.From,
 				DomainPart: g.config.ComponentName(),
@@ -80,17 +85,7 @@ func (g *gatewayProcess) sms2xmpp(sms *Sms) error {
 		Body: sms.Body,
 	}
 
-	msg.Header.To, err = g.config.PhoneToAddress(sms.To)
-	switch err {
-	case nil:
-		go func() { g.xmppTx <- msg }()
-	case ErrIgnoreMessage:
-		log.Println("ignoring message based on phone number")
-	default:
-		return errors.Wrap(err, "sms2xmpp")
-	}
-
-	return nil
+	go func() { g.xmppTx <- msg }()
 }
 
 func (g *gatewayProcess) smsDelivered(smsId string) error {
@@ -111,12 +106,7 @@ func (g *gatewayProcess) xmpp2sms(m *xco.Message) error {
 
 	// choose an SMS provider
 	provider, err := g.config.SmsProvider()
-	switch err {
-	case nil:
-		// all is well. we'll continue below
-	case ErrIgnoreMessage:
-		return nil
-	default:
+	if err != nil {
 		return errors.Wrap(err, "choosing an SMS provider")
 	}
 
