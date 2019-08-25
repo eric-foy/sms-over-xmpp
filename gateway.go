@@ -17,7 +17,7 @@ type gatewayProcess struct {
 	// fields shared with Component. see docs there
 	config     *Config
 	receiptFor map[string]*xco.Message
-	smsRx      <-chan RxSms
+	smsRx      <-chan *Sms
 	xmppRx     <-chan *xco.Message
 	xmppTx     chan<- *xco.Message
 }
@@ -34,24 +34,25 @@ func (g *gatewayProcess) loop(healthCh chan<- struct{}) {
 	for {
 		select {
 		case rxSms := <-g.smsRx:
-			var err error
-			errCh := rxSms.ErrCh()
-
-			switch x := rxSms.(type) {
-			case *rxSmsMessage:
-				g.sms2xmpp(x.sms)
-			case *rxSmsStatus:
-				switch x.status {
-				case smsDelivered:
-					err = g.smsDelivered(x.id)
+			g.sms2xmpp(rxSms)
+			/*
+				switch x := rxSms.(type) {
+				case *Sms:
+				case *rxSmsStatus:
+					switch x.status {
+					case smsDelivered:
+						err := g.smsDelivered(x.id)
+						if err != nil {
+							log.Printf("ERROR: with sms delivered status")
+							return
+						}
+					default:
+						log.Panicf("unexpected SMS status: %d", x.status)
+					}
 				default:
-					log.Panicf("unexpected SMS status: %d", x.status)
+					log.Panicf("unexpected RxSms type: %#v", rxSms)
 				}
-			default:
-				log.Panicf("unexpected RxSms type: %#v", rxSms)
-			}
-
-			go func() { errCh <- err }()
+			*/
 		case msg := <-g.xmppRx:
 			err := g.xmpp2sms(msg)
 			if err != nil {

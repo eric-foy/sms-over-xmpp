@@ -7,7 +7,7 @@ type AT struct {
 	modem    *gsm.Modem
 }
 
-func (at *AT) RunPstnProcess(rxSmsCh chan<- RxSms) <-chan struct{} {
+func (at *AT) RunPstnProcess(rxSmsCh chan<- *Sms) <-chan struct{} {
 	go at.modem.ReadTTY()
 	go at.modem.InitDevice()
 	healthCh := make(chan struct{})
@@ -16,16 +16,10 @@ func (at *AT) RunPstnProcess(rxSmsCh chan<- RxSms) <-chan struct{} {
 		for {
 			cmt := <-at.modem.Cmt
 
-			sms := &Sms{
+			rxSmsCh <- &Sms{
 				From: cmt.Oa,
 				Body: cmt.Data,
 			}
-
-			rx := &rxSmsMessage{
-				sms: sms,
-			}
-
-			rxSmsCh <- rx
 		}
 	}()
 
