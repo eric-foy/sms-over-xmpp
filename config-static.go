@@ -12,8 +12,6 @@ import (
 var _ Config = &StaticConfig{}
 
 type StaticConfig struct {
-	Http HttpConfig `toml:"http"`
-
 	Xmpp StaticConfigXmpp `toml:"xmpp"`
 
 	// Phones maps an E.164 phone number to an XMPP address.  If a
@@ -28,16 +26,6 @@ type StaticConfig struct {
 	// Can only connect open one connection to modem at a time, save address.
 	// Used for both sending SMS and receiving.
 	SlottedAT *AT
-}
-
-type HttpConfig struct {
-	Host string `toml:"host"`
-	Port int    `toml:"port"`
-
-	Username string `toml:"username"`
-	Password string `toml:"password"`
-
-	PublicUrl string `toml:"public-url"`
 }
 
 type StaticConfigXmpp struct {
@@ -64,22 +52,6 @@ func (self *StaticConfig) ComponentName() string {
 
 func (self *StaticConfig) SharedSecret() string {
 	return self.Xmpp.Secret
-}
-
-func (self *StaticConfig) HttpHost() string {
-	host := self.Http.Host
-	if host == "" {
-		host = "127.0.0.1"
-	}
-	return host
-}
-
-func (self *StaticConfig) HttpPort() int {
-	port := self.Http.Port
-	if port == 0 {
-		port = 9677
-	}
-	return port
 }
 
 func (self *StaticConfig) XmppHost() string {
