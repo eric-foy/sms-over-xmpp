@@ -1,6 +1,6 @@
 package sms
 
-import "github.com/eric-foy/go-gsm-lib"
+import gsm "github.com/eric-foy/go-gsm-lib"
 
 type AT struct {
 	phoneNum string

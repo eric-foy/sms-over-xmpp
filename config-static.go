@@ -1,10 +1,11 @@
-package sms // import "github.com/eric-foy/sms-over-xmpp"
+package sms
+
 import (
 	"regexp"
 
-	"github.com/eric-foy/go-gsm-lib"
+	gsm "github.com/eric-foy/go-gsm-lib"
 	xco "github.com/mndrix/go-xco"
-	"github.com/pkg/errors"
+	errors "github.com/pkg/errors"
 )
 
 // StaticConfig intends to implement the Config interface

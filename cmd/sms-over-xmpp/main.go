@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/BurntSushi/toml"
+	toml "github.com/BurntSushi/toml"
 	sms "github.com/eric-foy/sms-over-xmpp"
 )
 

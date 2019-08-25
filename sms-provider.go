@@ -1,4 +1,4 @@
-package sms // import "github.com/eric-foy/sms-over-xmpp"
+package sms
 
 // SmsProvider describes a provider that is able to send and receive
 // SMS messages.

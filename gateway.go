@@ -1,4 +1,5 @@
-package sms // import "github.com/eric-foy/sms-over-xmpp"
+package sms
+
 import (
 	"crypto/rand"
 	"encoding/base32"
@@ -7,7 +8,7 @@ import (
 	"strings"
 
 	xco "github.com/mndrix/go-xco"
-	"github.com/pkg/errors"
+	errors "github.com/pkg/errors"
 )
 
 // gatewayProcess is the piece which sits between the XMPP and HTTP
