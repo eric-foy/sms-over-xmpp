@@ -22,7 +22,6 @@ implementation.  That's done with the following goals in mind:
 
   * resilience against failure
   * fast processing for all messages
-  * support for multiple telephony providers
 
 ## Component
 

@@ -1,13 +1,6 @@
 package sms // import "github.com/eric-foy/sms-over-xmpp"
 import (
-	"bytes"
-	"context"
-	"log"
-	"os/exec"
 	"regexp"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/eric-foy/go-gsm-lib"
 	xco "github.com/mndrix/go-xco"
@@ -21,10 +14,6 @@ type StaticConfig struct {
 	Http HttpConfig `toml:"http"`
 
 	Xmpp StaticConfigXmpp `toml:"xmpp"`
-
-	// CallerId maps an E.164 phone number to a human readable name.
-	CallerId map[string]string `toml:"caller-id"`
-	cidMutex sync.Mutex
 
 	// Phones maps an E.164 phone number to an XMPP address.  If a
 	// mapping is not found here, the inverse of Users is considered.
@@ -152,38 +141,4 @@ func (self *StaticConfig) SmsProvider() (SmsProvider, error) {
 	}
 
 	return self.SlottedAT, nil
-}
-
-// must be safe from multiple goroutines
-func (self *StaticConfig) Cnam(from, to string) string {
-	var lookup string
-
-	self.cidMutex.Lock()
-	name := self.CallerId[from]
-	if name == "" {
-		lookup = self.CallerId["lookup"]
-	}
-	self.cidMutex.Unlock()
-
-	if lookup != "" {
-		var stdout, stderr bytes.Buffer
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		cmd := exec.CommandContext(ctx, lookup)
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		cmd.Env = []string{
-			"FROM=" + from,
-			"TO=" + to,
-		}
-		err := cmd.Run()
-		if err != nil {
-			log.Printf("ERROR caller-id.lookup error: %s: %s", err, stderr.String())
-			return ""
-		}
-		name = strings.SplitN(stdout.String(), "\n", 2)[0]
-		log.Printf("caller-id.lookup returned: %s", name)
-	}
-
-	return name
 }
