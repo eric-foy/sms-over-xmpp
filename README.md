@@ -59,6 +59,7 @@ Write a config file (`config.toml` is a common name):
 [xmpp]
 host = "127.0.0.1"
 port = 5347
+jid = "john@example.com"
 name = "sms.example.com"
 secret = "shared secret from your XMPP server config"
 
@@ -66,13 +67,6 @@ secret = "shared secret from your XMPP server config"
 [at]
 method = "serial"
 device = "/dev/ttyAMA0"
-# Used to populate FROM in sending sms, to be compatible with Twillio struct
-# SMSC will likely ignore it
-my-number = "+11234564849" 
-
-# map XMPP usernames to E.164 phone numbers
-[users]
-"john@example.com" = "+13075551212"
 ```
 
 Run your SMS component:
