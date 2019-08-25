@@ -18,7 +18,6 @@ func (at *AT) RunPstnProcess(rxSmsCh chan<- RxSms) <-chan struct{} {
 
 			sms := &Sms{
 				From: cmt.Oa,
-				To:   at.phoneNum,
 				Body: cmt.Data,
 			}
 

@@ -29,9 +29,6 @@ type ATConfig struct {
 
 	// Such as /dev/ttyAMA0 for serial and 192.168.1.111:7777 for serial_tcp.
 	Device string `toml:"device"`
-
-	// TODO phone number could be grabbed from Users section of config.
-	PhoneNum string `toml:"my-number"`
 }
 
 func (self *Config) SmsProvider() (SmsProvider, error) {
@@ -45,8 +42,7 @@ func (self *Config) SmsProvider() (SmsProvider, error) {
 			return nil, errors.Wrap(err, "Trouble connecting with AT device")
 		}
 		self.SlottedAT = &AT{
-			phoneNum: self.AT.PhoneNum,
-			modem:    modem,
+			modem: modem,
 		}
 	}
 
