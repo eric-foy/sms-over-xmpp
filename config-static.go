@@ -11,13 +11,6 @@ var _ Config = &StaticConfig{}
 type StaticConfig struct {
 	Xmpp StaticConfigXmpp `toml:"xmpp"`
 
-	// Phones maps an E.164 phone number to an XMPP address.  If a
-	// mapping is not found here, the inverse of Users is considered.
-	Phones map[string]string `toml:"phones"`
-
-	// Users maps an XMPP address to an E.164 phone number.
-	Users map[string]string `toml:"users"`
-
 	// AT contains optional configuration for connecting with modem via AT commands.
 	AT *ATConfig `toml:"at"`
 	// Can only connect open one connection to modem at a time, save address.
